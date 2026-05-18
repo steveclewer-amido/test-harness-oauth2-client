@@ -92,3 +92,64 @@ Click the logout button to end your session and be redirected as configured.
 ## License
 
 This project is provided as an example and is not intended for production use without further security review.
+
+---
+
+## Development Workflow (OpenSpec)
+
+This project uses [openspec](https://openspec.dev) to manage change proposals, design decisions, specs, and implementation tasks.
+
+### Prerequisites
+
+Install the openspec CLI:
+
+```bash
+npm install -g openspec
+```
+
+### Key Commands
+
+| Command | Description |
+|---|---|
+| `openspec list` | List all changes and their status |
+| `openspec status --change <name>` | Show artifact and task progress for a change |
+| `openspec new change <name>` | Scaffold a new change with proposal/design/specs/tasks |
+| `openspec instructions <artifact> --change <name> --json` | Get AI instructions for creating an artifact |
+| `openspec instructions apply --change <name> --json` | Get instructions and task list for implementation |
+
+### VS Code Shortcuts
+
+The `.github/prompts/` directory contains slash-command shortcuts for use with GitHub Copilot Chat:
+
+| Command | Description |
+|---|---|
+| `/opsx:propose` | Propose a new change — generates proposal, design, specs, and tasks in one step |
+| `/opsx:apply` | Implement pending tasks from an active change |
+| `/opsx:archive` | Archive a completed change |
+| `/opsx:explore` | Enter explore/thinking mode before or during a change |
+
+### Change Structure
+
+Changes live under `openspec/changes/<name>/`:
+
+```
+openspec/changes/<name>/
+  proposal.md   # Why — motivation and capabilities
+  design.md     # How — technical decisions and trade-offs
+  specs/
+    <capability>/spec.md  # What — testable requirements and scenarios
+  tasks.md      # Implementation checklist
+```
+
+### Example: How this project was built
+
+```bash
+# Propose the OAuth2 browser auth feature
+/opsx:propose
+
+# Implement the tasks (existing code was already in place)
+/opsx:apply
+
+# Archive when done
+/opsx:archive
+```
