@@ -18,6 +18,9 @@
 </head>
 <body class="bg-light">
 <div class="container py-4">
+    <div class="alert alert-warning" role="alert">
+        <strong>Developer use only.</strong> This page displays raw OAuth2 tokens. Do not deploy this application in any non-local environment.
+    </div>
     <h1 class="mb-4">Welcome,<span th:if="${userName}" th:text="' ' + ${userName}"></span></h1>
     <p class="text-muted" th:if="${userSubject}">Subject: <code th:text="${userSubject}"></code></p>
 

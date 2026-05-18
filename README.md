@@ -28,25 +28,34 @@ cd forgerock-oauth2-client
 
 ### 2. Configure Application
 
-Edit `src/main/resources/application.yml` to set your ForgeRock AM issuer, client ID, and client secret. Example:
+The following environment variables are required at startup:
 
-```yaml
-spring:
-  security:
-    oauth2:
-      client:
-        registration:
-          forgerock:
-            client-id: XXX
-            client-secret: XXX 
-            redirect-uri: "https://stevedev-local:8443/login/oauth2/code/forgerock"
-        provider:
-          forgerock:
-            issuer-uri: https://XXX/am/oauth2/alpha
+| Variable | Description | Example |
+|---|---|---|
+| `OAUTH2_CLIENT_ID` | OAuth2 client ID registered with ForgeRock | `Testharness` |
+| `OAUTH2_CLIENT_SECRET` | OAuth2 client secret | `<your-secret>` |
+| `OAUTH2_ISSUER_URI` | OIDC issuer URI for the ForgeRock realm | `https://<host>/am/oauth2/alpha` |
+
+Set them in your shell before running:
+
+```bash
+export OAUTH2_CLIENT_ID=Testharness
+export OAUTH2_CLIENT_SECRET=<your-secret>
+export OAUTH2_ISSUER_URI=https://<your-fr-host>/am/oauth2/alpha
 ```
 
-- The `redirect-uri` must match one of the allowed redirect URIs in your ForgeRock client registration.
-- The default HTTPS keystore is `keystore.p12` with password `password` (for development only).
+Or pass them inline:
+
+```bash
+OAUTH2_CLIENT_ID=Testharness \
+OAUTH2_CLIENT_SECRET=<your-secret> \
+OAUTH2_ISSUER_URI=https://<your-fr-host>/am/oauth2/alpha \
+./mvnw spring-boot:run
+```
+
+The `redirect-uri` is set to `https://stevedev-local:8443/login/oauth2/code/forgerock` and must match one of the allowed redirect URIs in your ForgeRock client registration. To change it, update `application.yml`.
+
+The default HTTPS keystore is `keystore.p12` with password `password` (for development only).
 
 ### 3. Run the Application
 

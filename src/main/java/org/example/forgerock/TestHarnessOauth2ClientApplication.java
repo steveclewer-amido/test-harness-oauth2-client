@@ -4,8 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ForgerockOauth2ClientApplication {
+public class TestHarnessOauth2ClientApplication {
     public static void main(String[] args) {
-        SpringApplication.run(ForgerockOauth2ClientApplication.class, args);
+        SpringApplication.run(TestHarnessOauth2ClientApplication.class, args);
     }
 }

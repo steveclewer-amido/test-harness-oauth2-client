@@ -4,9 +4,9 @@ server:
   ssl:
     enabled: true
     key-store: classpath:keystore.p12
-    key-store-password: XXX
+    key-store-password: password
     key-store-type: PKCS12
-    key-alias: XXX
+    key-alias: my-ssl-key
 
 spring:
   thymeleaf:
@@ -17,14 +17,17 @@ spring:
       client:
         registration:
           forgerock:
-            client-id: XXX
-            client-secret: XXX
+            client-id: ${OAUTH2_CLIENT_ID}
+            client-secret: ${OAUTH2_CLIENT_SECRET}
             client-authentication-method: client_secret_post
             client-name: ForgeRock
             provider: forgerock
             authorization-grant-type: authorization_code
             # Spring Security uses this as the redirect URI for the callback
+#            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+#            redirect-uri: "https://localhost:8443/login/oauth2/code/forgerock"
             redirect-uri: "https://stevedev-local:8443/login/oauth2/code/forgerock"
+#            redirect-uri: "https://httpbin.org/anything"
             scope:
               - openid
               - profile
@@ -34,7 +37,7 @@ spring:
           forgerock:
             # Use your ForgeRock OIDC issuer (AM)
             # Example: https://<your-fr-host>/am/oauth2/realms/<realm-name>
-            issuer-uri: https://XXX:443/am/oauth2/alpha
+            issuer-uri: ${OAUTH2_ISSUER_URI}
 
 # Optional: If used, this needs to be defined as one of the logout URIs on ForgeRock
 app:
