@@ -8,6 +8,8 @@ This project demonstrates a Spring Boot application acting as an OAuth2 client f
 - HTTPS enabled by default (self-signed keystore included)
 - Thymeleaf-based UI with JSON claims highlighting
 - Secure login and logout flows
+- Live API call page — invoke the OIDC UserInfo endpoint and (optionally) token introspection directly from the browser using the current session's tokens
+- Automatic access token refresh via refresh token grant before outbound API calls
 - Configurable via `application.yml`
 
 ## Prerequisites
@@ -30,11 +32,12 @@ cd forgerock-oauth2-client
 
 The following environment variables are required at startup:
 
-| Variable | Description | Example |
-|---|---|---|
-| `OAUTH2_CLIENT_ID` | OAuth2 client ID registered with ForgeRock | `Testharness` |
-| `OAUTH2_CLIENT_SECRET` | OAuth2 client secret | `<your-secret>` |
-| `OAUTH2_ISSUER_URI` | OIDC issuer URI for the ForgeRock realm | `https://<host>/am/oauth2/alpha` |
+| Variable | Required | Description | Example |
+|---|---|---|---|
+| `OAUTH2_CLIENT_ID` | Yes | OAuth2 client ID registered with ForgeRock | `Testharness` |
+| `OAUTH2_CLIENT_SECRET` | Yes | OAuth2 client secret | `<your-secret>` |
+| `OAUTH2_ISSUER_URI` | Yes | OIDC issuer URI for the ForgeRock realm | `https://<host>/am/oauth2/alpha` |
+| `APP_INTROSPECTION_URI` | No | Token introspection endpoint. When set, enables the introspection panel on the API calls page. Uses `client_secret_post` auth. | `https://<host>/am/oauth2/alpha/introspect` |
 
 Set them in your shell before running:
 
@@ -50,7 +53,8 @@ Or pass them inline:
 OAUTH2_CLIENT_ID=Testharness \
 OAUTH2_CLIENT_SECRET=<your-secret> \
 OAUTH2_ISSUER_URI=https://<your-fr-host>/am/oauth2/alpha \
-./mvnw spring-boot:run
+APP_INTROSPECTION_URI=https://<your-fr-host>/am/oauth2/alpha/introspect \
+mvn spring-boot:run
 ```
 
 The `redirect-uri` is set to `https://stevedev-local:8443/login/oauth2/code/forgerock` and must match one of the allowed redirect URIs in your ForgeRock client registration. To change it, update `application.yml`.
@@ -73,7 +77,16 @@ Open [https://stevedev-local:8443/](https://stevedev-local:8443/) in your browse
 
 Click the login button to authenticate via ForgeRock. After login, your ID and access token claims will be displayed with syntax highlighting.
 
-### 6. Logout
+### 6. Make API Calls
+
+From the token display page, click **Make API Calls** to open `/api-calls`. This page:
+
+- Calls the OIDC **UserInfo endpoint** using your current access token and displays the raw JSON response.
+- If `APP_INTROSPECTION_URI` is set, also calls the **token introspection endpoint** (using `client_secret_post` credentials) and displays the result.
+- Automatically refreshes an expired access token via the refresh token grant before making calls.
+- Displays the HTTP status code alongside each response — useful for debugging scope or permission issues.
+
+### 7. Logout
 
 Click the logout button to end your session and be redirected as configured.
 
@@ -88,6 +101,8 @@ Click the logout button to end your session and be redirected as configured.
 - **403 or redirect_uri_mismatch**: Ensure the `redirect-uri` in `application.yml` matches exactly with the value registered in ForgeRock.
 - **Blank login page**: Check browser console for cookie or CORS issues. Ensure your hostname is resolvable and trusted by ForgeRock.
 - **HTTPS issues**: Trust the self-signed certificate or use a valid certificate for your environment.
+- **401 on introspection**: Ensure the ForgeRock client is configured with `client_secret_post` as the token endpoint authentication method, which matches the `client-authentication-method` setting in `application.yml`.
+- **Introspection panel not shown**: Confirm `APP_INTROSPECTION_URI` is set in the environment before starting the app. The panel is hidden when the variable is absent or empty.
 
 ## License
 

@@ -24,7 +24,6 @@ spring:
             provider: forgerock
             authorization-grant-type: authorization_code
             # Spring Security uses this as the redirect URI for the callback
-#            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
 #            redirect-uri: "https://localhost:8443/login/oauth2/code/forgerock"
             redirect-uri: "https://stevedev-local:8443/login/oauth2/code/forgerock"
 #            redirect-uri: "https://httpbin.org/anything"
@@ -42,6 +41,7 @@ spring:
 # Optional: If used, this needs to be defined as one of the logout URIs on ForgeRock
 app:
   post-logout-redirect-uri: "https://stevedev-local:8443/"
+  introspection-uri: ${APP_INTROSPECTION_URI:}
 
 logging:
   level:
