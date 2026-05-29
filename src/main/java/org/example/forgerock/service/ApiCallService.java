@@ -111,7 +111,7 @@ public class ApiCallService {
                                              HttpServletRequest request,
                                              HttpServletResponse response) {
         OAuth2AuthorizeRequest authorizeRequest = OAuth2AuthorizeRequest
-                .withClientRegistrationId("forgerock")
+                .withClientRegistrationId("auth0")
                 .principal(auth)
                 .attribute(HttpServletRequest.class.getName(), request)
                 .attribute(HttpServletResponse.class.getName(), response)

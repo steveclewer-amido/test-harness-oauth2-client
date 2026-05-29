@@ -16,16 +16,16 @@ spring:
     oauth2:
       client:
         registration:
-          forgerock:
+          auth0:
             client-id: ${OAUTH2_CLIENT_ID}
             client-secret: ${OAUTH2_CLIENT_SECRET}
             client-authentication-method: client_secret_post
-            client-name: ForgeRock
-            provider: forgerock
+            client-name: Auth0
+            provider: auth0
             authorization-grant-type: authorization_code
             # Spring Security uses this as the redirect URI for the callback
-#            redirect-uri: "https://localhost:8443/login/oauth2/code/forgerock"
-            redirect-uri: "https://stevedev-local:8443/login/oauth2/code/forgerock"
+#            redirect-uri: "https://localhost:8443/login/oauth2/code/auth0"
+            redirect-uri: "https://stevedev-local:8443/login/oauth2/code/auth0"
 #            redirect-uri: "https://httpbin.org/anything"
             scope:
               - openid
@@ -33,9 +33,11 @@ spring:
               - email
               # add any API scopes you need here (e.g., read write)
         provider:
-          forgerock:
-            # Use your ForgeRock OIDC issuer (AM)
-            # Example: https://<your-fr-host>/am/oauth2/realms/<realm-name>
+          auth0:
+            # TEMP to force authentication via keycloak
+            #authorization-uri: https://dev-wijb7ha3.us.auth0.com/authorize?connection=keycloak-alpha
+
+            # Auth0 issuer URI: https://<your-tenant>.auth0.com/
             issuer-uri: ${OAUTH2_ISSUER_URI}
 
 # Optional: If used, this needs to be defined as one of the logout URIs on ForgeRock

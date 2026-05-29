@@ -28,10 +28,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 @Controller
 public class HomeController {
 
-    @Value("${spring.security.oauth2.client.registration.forgerock.redirect-uri}")
+    @Value("${spring.security.oauth2.client.registration.auth0.redirect-uri}")
     private String redirectUri;
 
-    @Value("${spring.security.oauth2.client.provider.forgerock.issuer-uri}")
+    @Value("${spring.security.oauth2.client.provider.auth0.issuer-uri}")
     private String issuerUri;
 
     private final Environment env;
@@ -59,7 +59,7 @@ public class HomeController {
 
     @GetMapping("/home")
     public String home(@AuthenticationPrincipal OidcUser oidcUser,
-                       @RegisteredOAuth2AuthorizedClient("forgerock") OAuth2AuthorizedClient client,
+                       @RegisteredOAuth2AuthorizedClient("auth0") OAuth2AuthorizedClient client,
                        Model model) {
         // Basic principal info (from ID Token if openid scope is present)
         if (oidcUser != null) {
@@ -106,7 +106,7 @@ public class HomeController {
 
     private Map<String, Object> tryDecodeAccessToken(String token) {
         Map<String, Object> claims = new LinkedHashMap<>();
-        String issuer = env.getProperty("spring.security.oauth2.client.provider.forgerock.issuer-uri");
+        String issuer = env.getProperty("spring.security.oauth2.client.provider.auth0.issuer-uri");
         if (issuer != null) {
             try {
                 JwtDecoder decoder = JwtDecoders.fromIssuerLocation(issuer);
