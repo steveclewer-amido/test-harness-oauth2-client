@@ -31,6 +31,9 @@ public class HomeController {
     @Value("${spring.security.oauth2.client.registration.auth0.redirect-uri}")
     private String redirectUri;
 
+    @Value("${spring.security.oauth2.client.registration.auth0-keycloak.redirect-uri}")
+    private String redirectUriKeycloak;
+
     @Value("${spring.security.oauth2.client.provider.auth0.issuer-uri}")
     private String issuerUri;
 
@@ -49,6 +52,7 @@ public class HomeController {
     public String index(@AuthenticationPrincipal OidcUser oidcUser, Model model) {
         model.addAttribute("issuerUri", issuerUri);
         model.addAttribute("redirectUri", redirectUri);
+        model.addAttribute("redirectUriKeycloak", redirectUriKeycloak);
 
         // If already authenticated, jump to the landing page
         if (oidcUser != null) {

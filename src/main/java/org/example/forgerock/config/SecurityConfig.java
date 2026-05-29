@@ -42,7 +42,7 @@ public class SecurityConfig {
                         .antMatchers("/", "/css/**", "/js/**", "/images/**", "/webjars/**", "/Designer.png").permitAll()
                         .anyRequest().authenticated()
                 )
-                .oauth2Login(Customizer.withDefaults())
+                .oauth2Login(oauth2 -> oauth2.loginPage("/"))
                 .oauth2Client(Customizer.withDefaults())
                 .csrf(csrf -> csrf
                         // 2.7.x style for CSRF ignore

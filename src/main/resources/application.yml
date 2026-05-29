@@ -32,13 +32,38 @@ spring:
               - profile
               - email
               # add any API scopes you need here (e.g., read write)
+
+          # Second registration: same Auth0 app but forces the Keycloak connection.
+          # Auth0 skips its own login form and goes straight to Keycloak.
+          # Requires OAUTH2_AUTHZ_URI_KEYCLOAK=https://<auth0-domain>/authorize?connection=keycloak-alpha
+          # Also register https://stevedev-local:8443/login/oauth2/code/auth0-keycloak
+          # as an Allowed Callback URL in the Auth0 application.
+          auth0-keycloak:
+            client-id: ${OAUTH2_CLIENT_ID}
+            client-secret: ${OAUTH2_CLIENT_SECRET}
+            client-authentication-method: client_secret_post
+            client-name: Auth0 (Keycloak federated)
+            provider: auth0-keycloak
+            authorization-grant-type: authorization_code
+            redirect-uri: "https://stevedev-local:8443/login/oauth2/code/auth0-keycloak"
+            scope:
+              - openid
+              - profile
+              - email
+
         provider:
           auth0:
-            # TEMP to force authentication via keycloak
-            #authorization-uri: https://dev-wijb7ha3.us.auth0.com/authorize?connection=keycloak-alpha
-
-            # Auth0 issuer URI: https://<your-tenant>.auth0.com/
+            # Forces Auth0's local user database, bypassing Home Realm Discovery.
+            # Without this, Auth0 HRD auto-routes @ensono.com users to Keycloak.
             issuer-uri: ${OAUTH2_ISSUER_URI}
+            authorization-uri: ${OAUTH2_AUTHZ_URI_DIRECT:https://dev-wijb7ha3.us.auth0.com/authorize?connection=Username-Password-Authentication}
+
+          auth0-keycloak:
+            # Same tenant — OIDC discovery provides token/userinfo/jwks endpoints.
+            # The authorization-uri override injects ?connection=keycloak-alpha so
+            # Auth0 bypasses its own login form and routes straight to Keycloak.
+            issuer-uri: ${OAUTH2_ISSUER_URI}
+            authorization-uri: ${OAUTH2_AUTHZ_URI_KEYCLOAK:https://dev-wijb7ha3.us.auth0.com/authorize?connection=keycloak-alpha}
 
 # Optional: If used, this needs to be defined as one of the logout URIs on ForgeRock
 app:
