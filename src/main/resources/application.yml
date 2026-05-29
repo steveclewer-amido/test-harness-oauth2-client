@@ -55,15 +55,17 @@ spring:
           auth0:
             # Forces Auth0's local user database, bypassing Home Realm Discovery.
             # Without this, Auth0 HRD auto-routes @ensono.com users to Keycloak.
+            # Requires OAUTH2_AUTHZ_URI_DIRECT=https://<auth0-domain>/authorize?connection=Username-Password-Authentication
             issuer-uri: ${OAUTH2_ISSUER_URI}
-            authorization-uri: ${OAUTH2_AUTHZ_URI_DIRECT:https://dev-wijb7ha3.us.auth0.com/authorize?connection=Username-Password-Authentication}
+            authorization-uri: ${OAUTH2_AUTHZ_URI_DIRECT}
 
           auth0-keycloak:
             # Same tenant — OIDC discovery provides token/userinfo/jwks endpoints.
             # The authorization-uri override injects ?connection=keycloak-alpha so
             # Auth0 bypasses its own login form and routes straight to Keycloak.
+            # Requires OAUTH2_AUTHZ_URI_KEYCLOAK=https://<auth0-domain>/authorize?connection=keycloak-alpha
             issuer-uri: ${OAUTH2_ISSUER_URI}
-            authorization-uri: ${OAUTH2_AUTHZ_URI_KEYCLOAK:https://dev-wijb7ha3.us.auth0.com/authorize?connection=keycloak-alpha}
+            authorization-uri: ${OAUTH2_AUTHZ_URI_KEYCLOAK}
 
 # Optional: If used, this needs to be defined as one of the logout URIs on ForgeRock
 app:
