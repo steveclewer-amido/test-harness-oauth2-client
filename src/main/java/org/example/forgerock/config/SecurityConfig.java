@@ -108,11 +108,17 @@ public class SecurityConfig {
                 .fromUriString(base + "oidc/logout")
                 .queryParam("client_id", auth0ClientId)
                 .queryParam("post_logout_redirect_uri", postLogoutRedirectUri);
-        if (authentication instanceof OAuth2AuthenticationToken) {
-            Object principal = ((OAuth2AuthenticationToken) authentication).getPrincipal();
+        if (authentication instanceof OAuth2AuthenticationToken oat) {
+            Object principal = oat.getPrincipal();
             if (principal instanceof OidcUser) {
                 builder.queryParam("id_token_hint",
                         ((OidcUser) principal).getIdToken().getTokenValue());
+            }
+            // Propagate logout to the upstream IdP (e.g. Keycloak) when the user
+            // authenticated via a federated connection. Auth0 supports a 'federated'
+            // parameter on its logout endpoint for exactly this purpose.
+            if ("auth0-keycloak".equals(oat.getAuthorizedClientRegistrationId())) {
+                builder.queryParam("federated", "");
             }
         }
         return builder.encode(StandardCharsets.UTF_8).build().toUriString();
