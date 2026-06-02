@@ -2,9 +2,11 @@ package org.example.forgerock.web;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -39,9 +41,11 @@ public class HomeController {
 
     private final Environment env;
     private final ObjectMapper mapper;
+    private final OAuth2AuthorizedClientService authorizedClientService;
 
-    public HomeController(Environment env) {
+    public HomeController(Environment env, OAuth2AuthorizedClientService authorizedClientService) {
         this.env = env;
+        this.authorizedClientService = authorizedClientService;
         this.mapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
@@ -63,8 +67,12 @@ public class HomeController {
 
     @GetMapping("/home")
     public String home(@AuthenticationPrincipal OidcUser oidcUser,
-                       @RegisteredOAuth2AuthorizedClient("auth0") OAuth2AuthorizedClient client,
+                       Authentication authentication,
                        Model model) {
+        String registrationId = (authentication instanceof OAuth2AuthenticationToken oat)
+                ? oat.getAuthorizedClientRegistrationId() : "auth0";
+        OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
+                registrationId, authentication.getName());
         // Basic principal info (from ID Token if openid scope is present)
         if (oidcUser != null) {
             model.addAttribute("userName", oidcUser.getFullName() != null ? oidcUser.getFullName() : oidcUser.getName());

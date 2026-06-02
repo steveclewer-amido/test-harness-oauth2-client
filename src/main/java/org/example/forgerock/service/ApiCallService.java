@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Service;
@@ -110,8 +111,10 @@ public class ApiCallService {
     private OAuth2AuthorizedClient authorize(Authentication auth,
                                              HttpServletRequest request,
                                              HttpServletResponse response) {
+        String registrationId = (auth instanceof OAuth2AuthenticationToken oat)
+                ? oat.getAuthorizedClientRegistrationId() : "auth0";
         OAuth2AuthorizeRequest authorizeRequest = OAuth2AuthorizeRequest
-                .withClientRegistrationId("auth0")
+                .withClientRegistrationId(registrationId)
                 .principal(auth)
                 .attribute(HttpServletRequest.class.getName(), request)
                 .attribute(HttpServletResponse.class.getName(), response)

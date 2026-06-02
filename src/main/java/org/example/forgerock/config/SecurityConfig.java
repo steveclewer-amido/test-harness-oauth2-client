@@ -1,6 +1,9 @@
 package org.example.forgerock.config;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,8 +15,11 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProvider
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizedClientManager;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.DefaultRedirectStrategy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -33,6 +39,12 @@ public class SecurityConfig {
     @Value("${spring.security.oauth2.client.provider.auth0.issuer-uri}")
     private String auth0IssuerUri;
 
+    @Value("${app.connections.auth0:Username-Password-Authentication}")
+    private String auth0Connection;
+
+    @Value("${app.connections.auth0-keycloak:keycloak-alpha}")
+    private String auth0KeycloakConnection;
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                             ClientRegistrationRepository clientRegistrationRepository) throws Exception {
@@ -42,7 +54,14 @@ public class SecurityConfig {
                         .antMatchers("/", "/css/**", "/js/**", "/images/**", "/webjars/**", "/Designer.png").permitAll()
                         .anyRequest().authenticated()
                 )
-                .oauth2Login(oauth2 -> oauth2.loginPage("/"))
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/")
+                        .authorizationEndpoint(authz -> authz
+                                .authorizationRequestResolver(
+                                        new ConnectionAwareRequestResolver(
+                                                clientRegistrationRepository,
+                                                Map.of("auth0", auth0Connection,
+                                                       "auth0-keycloak", auth0KeycloakConnection)))))
                 .oauth2Client(Customizer.withDefaults())
                 .csrf(csrf -> csrf
                         // 2.7.x style for CSRF ignore
@@ -97,5 +116,56 @@ public class SecurityConfig {
             }
         }
         return builder.encode(StandardCharsets.UTF_8).build().toUriString();
+    }
+
+    /**
+     * Adds the Auth0 {@code connection} query parameter to the authorization request
+     * for each registration, without embedding it in the {@code authorization-uri}.
+     * Spring Security requires {@code authorization-uri} to be clean (no query params);
+     * additional OAuth parameters must go through this resolver.
+     */
+    private static final class ConnectionAwareRequestResolver implements OAuth2AuthorizationRequestResolver {
+
+        private final DefaultOAuth2AuthorizationRequestResolver delegate;
+        private final Map<String, String> connectionsByRegistrationId;
+
+        ConnectionAwareRequestResolver(ClientRegistrationRepository repo,
+                                       Map<String, String> connectionsByRegistrationId) {
+            this.delegate = new DefaultOAuth2AuthorizationRequestResolver(repo, "/oauth2/authorization");
+            this.connectionsByRegistrationId = connectionsByRegistrationId;
+        }
+
+        @Override
+        public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
+            OAuth2AuthorizationRequest base = delegate.resolve(request);
+            return withConnection(base, extractRegistrationId(request));
+        }
+
+        @Override
+        public OAuth2AuthorizationRequest resolve(HttpServletRequest request, String clientRegistrationId) {
+            OAuth2AuthorizationRequest base = delegate.resolve(request, clientRegistrationId);
+            return withConnection(base, clientRegistrationId);
+        }
+
+        private OAuth2AuthorizationRequest withConnection(OAuth2AuthorizationRequest base, String registrationId) {
+            if (base == null || registrationId == null) {
+                return base;
+            }
+            String connection = connectionsByRegistrationId.get(registrationId);
+            if (connection == null) {
+                return base;
+            }
+            Map<String, Object> params = new HashMap<>(base.getAdditionalParameters());
+            params.put("connection", connection);
+            return OAuth2AuthorizationRequest.from(base)
+                    .additionalParameters(params)
+                    .build();
+        }
+
+        private static String extractRegistrationId(HttpServletRequest request) {
+            String uri = request.getRequestURI();
+            int lastSlash = uri.lastIndexOf('/');
+            return lastSlash >= 0 ? uri.substring(lastSlash + 1) : null;
+        }
     }
 }
