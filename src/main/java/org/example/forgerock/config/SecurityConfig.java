@@ -45,6 +45,9 @@ public class SecurityConfig {
     @Value("${app.connections.auth0-keycloak:keycloak-alpha}")
     private String auth0KeycloakConnection;
 
+    @Value("${app.organizations.auth0-org:}")
+    private String auth0OrgId;
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                             ClientRegistrationRepository clientRegistrationRepository) throws Exception {
@@ -61,7 +64,8 @@ public class SecurityConfig {
                                         new ConnectionAwareRequestResolver(
                                                 clientRegistrationRepository,
                                                 Map.of("auth0", auth0Connection,
-                                                       "auth0-keycloak", auth0KeycloakConnection)))))
+                                                       "auth0-keycloak", auth0KeycloakConnection),
+                                                Map.of("auth0-org", auth0OrgId)))))
                 .oauth2Client(Customizer.withDefaults())
                 .csrf(csrf -> csrf
                         // 2.7.x style for CSRF ignore
@@ -134,11 +138,14 @@ public class SecurityConfig {
 
         private final DefaultOAuth2AuthorizationRequestResolver delegate;
         private final Map<String, String> connectionsByRegistrationId;
+        private final Map<String, String> organizationsByRegistrationId;
 
         ConnectionAwareRequestResolver(ClientRegistrationRepository repo,
-                                       Map<String, String> connectionsByRegistrationId) {
+                                       Map<String, String> connectionsByRegistrationId,
+                                       Map<String, String> organizationsByRegistrationId) {
             this.delegate = new DefaultOAuth2AuthorizationRequestResolver(repo, "/oauth2/authorization");
             this.connectionsByRegistrationId = connectionsByRegistrationId;
+            this.organizationsByRegistrationId = organizationsByRegistrationId;
         }
 
         @Override
@@ -158,11 +165,17 @@ public class SecurityConfig {
                 return base;
             }
             String connection = connectionsByRegistrationId.get(registrationId);
-            if (connection == null) {
+            String organization = organizationsByRegistrationId.get(registrationId);
+            if (connection == null && (organization == null || organization.isEmpty())) {
                 return base;
             }
             Map<String, Object> params = new HashMap<>(base.getAdditionalParameters());
-            params.put("connection", connection);
+            if (connection != null) {
+                params.put("connection", connection);
+            }
+            if (organization != null && !organization.isEmpty()) {
+                params.put("organization", organization);
+            }
             return OAuth2AuthorizationRequest.from(base)
                     .additionalParameters(params)
                     .build();

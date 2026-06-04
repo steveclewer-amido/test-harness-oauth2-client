@@ -51,6 +51,23 @@ spring:
               - profile
               - email
 
+          # Third registration: same Auth0 app but scoped to a specific Auth0 organization.
+          # Requires OAUTH2_ORG_ID=<auth0-org-id> (e.g. org_HIEqnJwKqn595kRF)
+          # Also register https://stevedev-local:8443/login/oauth2/code/auth0-org
+          # as an Allowed Callback URL in the Auth0 application.
+          auth0-org:
+            client-id: ${OAUTH2_CLIENT_ID}
+            client-secret: ${OAUTH2_CLIENT_SECRET}
+            client-authentication-method: client_secret_post
+            client-name: Auth0 (Organization)
+            provider: auth0-org
+            authorization-grant-type: authorization_code
+            redirect-uri: "https://stevedev-local:8443/login/oauth2/code/auth0-org"
+            scope:
+              - openid
+              - profile
+              - email
+
         provider:
           auth0:
             # Forces Auth0's local user database, bypassing Home Realm Discovery.
@@ -63,6 +80,10 @@ spring:
             # The 'connection' parameter is injected via ConnectionAwareRequestResolver in SecurityConfig.
             issuer-uri: ${OAUTH2_ISSUER_URI}
 
+          auth0-org:
+            # Same tenant — the 'organization' parameter is injected via ConnectionAwareRequestResolver.
+            issuer-uri: ${OAUTH2_ISSUER_URI}
+
 # Optional: If used, this needs to be defined as one of the logout URIs on ForgeRock
 app:
   post-logout-redirect-uri: "https://stevedev-local:8443/"
@@ -72,6 +93,9 @@ app:
   connections:
     auth0: ${OAUTH2_CONNECTION_DIRECT:Username-Password-Authentication}
     auth0-keycloak: ${OAUTH2_CONNECTION_KEYCLOAK:keycloak-alpha}
+  # Auth0 organization ID; set OAUTH2_ORG_ID=<your-org-id> to enable org-scoped login
+  organizations:
+    auth0-org: ${OAUTH2_ORG_ID:}
 
 logging:
   level:

@@ -5,8 +5,8 @@ This project demonstrates a Spring Boot application acting as an OAuth2 client f
 ## Features
 
 - OAuth2 Authorization Code flow with Auth0 as the provider
-- Two login paths: direct Auth0 (`Username-Password-Authentication` connection) and Auth0 federated via Keycloak
-- `ConnectionAwareRequestResolver` injects the Auth0 `connection` parameter at authorization time without embedding it in `authorization-uri`
+- Three login paths: direct Auth0 (`Username-Password-Authentication` connection), Auth0 federated via Keycloak, and Auth0 scoped to a specific organization
+- `ConnectionAwareRequestResolver` injects Auth0 `connection` and `organization` parameters at authorization time without embedding them in `authorization-uri`
 - Federated logout: when signed in via the Keycloak connection, logout propagates upstream using Auth0's `federated` parameter
 - HTTPS enabled by default (self-signed keystore included)
 - Thymeleaf-based UI with JSON claims highlighting
@@ -43,6 +43,7 @@ The following environment variables are required at startup:
 | `APP_INTROSPECTION_URI` | No | Token introspection endpoint. When set, enables the introspection panel on the API calls page. Uses `client_secret_post` auth. | `https://<tenant>.auth0.com/oauth/introspect` |
 | `OAUTH2_CONNECTION_DIRECT` | No | Auth0 connection name for the direct login path. Defaults to `Username-Password-Authentication`. | `Username-Password-Authentication` |
 | `OAUTH2_CONNECTION_KEYCLOAK` | No | Auth0 connection name for the federated Keycloak login path. Defaults to `keycloak-alpha`. | `keycloak-alpha` |
+| `OAUTH2_ORG_ID` | No | Auth0 organization ID. When set, enables the organization login path which passes `organization=<id>` to the authorize endpoint. | `org_HIEqnJwKqn595kRF` |
 
 Set them in your shell before running:
 
@@ -59,6 +60,7 @@ OAUTH2_CLIENT_ID=<your-client-id> \
 OAUTH2_CLIENT_SECRET=<your-secret> \
 OAUTH2_ISSUER_URI=https://<your-auth0-tenant>.auth0.com/ \
 APP_INTROSPECTION_URI=https://<your-auth0-tenant>.auth0.com/oauth/introspect \
+OAUTH2_ORG_ID=<your-org-id> \
 mvn spring-boot:run
 ```
 
@@ -66,8 +68,9 @@ The redirect URIs are:
 
 - `https://stevedev-local:8443/login/oauth2/code/auth0` (direct Auth0 login)
 - `https://stevedev-local:8443/login/oauth2/code/auth0-keycloak` (Keycloak federated login)
+- `https://stevedev-local:8443/login/oauth2/code/auth0-org` (organization login)
 
-Both must be registered as **Allowed Callback URLs** in your Auth0 application. To change them, update `application.yml`.
+All three must be registered as **Allowed Callback URLs** in your Auth0 application. To change them, update `application.yml`.
 
 The default HTTPS keystore is `keystore.p12` with password `password` (for development only).
 
@@ -85,10 +88,11 @@ Open [https://stevedev-local:8443/](https://stevedev-local:8443/) in your browse
 
 ### 5. Login with Auth0
 
-The home page presents two login buttons:
+The home page presents three login buttons:
 
-- **Login with Auth0** — authenticates directly via the `Username-Password-Authentication` connection (or the value of `OAUTH2_CONNECTION_DIRECT`).
-- **Login with Auth0 (Keycloak federated)** — routes through the `keycloak-alpha` connection (or the value of `OAUTH2_CONNECTION_KEYCLOAK`), delegating authentication upstream to Keycloak.
+- **Login direct (Auth0)** — authenticates directly via the `Username-Password-Authentication` connection (or the value of `OAUTH2_CONNECTION_DIRECT`).
+- **Login federated (Auth0 → Keycloak)** — routes through the `keycloak-alpha` connection (or the value of `OAUTH2_CONNECTION_KEYCLOAK`), delegating authentication upstream to Keycloak.
+- **Login with Organization (Auth0)** — passes `organization=<OAUTH2_ORG_ID>` to Auth0's authorize endpoint, scoping the login to a specific Auth0 organization. Only appears useful when `OAUTH2_ORG_ID` is set.
 
 After login, your ID and access token claims will be displayed with syntax highlighting.
 
@@ -113,13 +117,14 @@ Click the logout button to end your session and be redirected as configured.
 
 ## Troubleshooting
 
-- **403 or redirect_uri_mismatch**: Ensure both redirect URIs (`/login/oauth2/code/auth0` and `/login/oauth2/code/auth0-keycloak`) are registered as Allowed Callback URLs in your Auth0 application.
+- **403 or redirect_uri_mismatch**: Ensure all three redirect URIs (`/login/oauth2/code/auth0`, `/login/oauth2/code/auth0-keycloak`, and `/login/oauth2/code/auth0-org`) are registered as Allowed Callback URLs in your Auth0 application.
 - **Blank login page**: Check browser console for cookie or CORS issues. Ensure your hostname is resolvable and trusted by Auth0.
 - **HTTPS issues**: Trust the self-signed certificate or use a valid certificate for your environment.
 - **401 on introspection**: Ensure the Auth0 application is configured with `client_secret_post` as the token endpoint authentication method, which matches the `client-authentication-method` setting in `application.yml`.
 - **Introspection panel not shown**: Confirm `APP_INTROSPECTION_URI` is set in the environment before starting the app. The panel is hidden when the variable is absent or empty.
 - **Keycloak federated login not working**: Confirm the Auth0 connection name matches the value of `OAUTH2_CONNECTION_KEYCLOAK` and that `https://stevedev-local:8443/login/oauth2/code/auth0-keycloak` is an Allowed Callback URL.
 - **Federated logout not propagating**: Auth0's `federated` logout parameter is only sent when the user authenticated via the `auth0-keycloak` registration. Confirm the Keycloak connection in Auth0 has back-channel logout or OIDC RP-Initiated Logout configured.
+- **Organization login not working**: Confirm `OAUTH2_ORG_ID` is set to a valid Auth0 organization ID (e.g. `org_...`) and that `https://stevedev-local:8443/login/oauth2/code/auth0-org` is an Allowed Callback URL. Also ensure the Auth0 application is enabled for the organization in the Auth0 dashboard.
 
 ## License
 

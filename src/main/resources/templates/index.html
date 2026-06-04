@@ -32,6 +32,9 @@
                         <a class="btn btn-outline-primary" th:href="@{/oauth2/authorization/auth0-keycloak}">
                             Login federated (Auth0 &#8594; Keycloak as IdP)
                         </a>
+                        <a class="btn btn-outline-secondary" th:href="@{/oauth2/authorization/auth0-org}">
+                            Login with Organization (Auth0)
+                        </a>
                     </div>
                     <p class="text-muted mt-3">
                         The login is against <code th:text="${issuerUri}"></code>
@@ -39,7 +42,8 @@
                     <p class="text-muted mt-3">
                         Redirect URIs should be configured in Auth0 as<br/>
                         <code th:text="${redirectUri}"></code><br/>
-                        <code th:text="${redirectUriKeycloak}"></code>
+                        <code th:text="${redirectUriKeycloak}"></code><br/>
+                        <code th:text="${redirectUriOrg}"></code>
                     </p>
                 </div>
             </div>
