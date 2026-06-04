@@ -1,10 +1,13 @@
 # test-harness-oauth2-client
 
-This project demonstrates a Spring Boot application acting as an OAuth2 client for ForgeRock Identity Platform. It provides a simple web interface to authenticate users via ForgeRock, display their ID and access tokens, and supports secure logout.
+This project demonstrates a Spring Boot application acting as an OAuth2 client for Auth0. It provides a simple web interface to authenticate users via Auth0 (optionally federated through Keycloak), display their ID and access tokens, and supports secure logout.
 
 ## Features
 
-- OAuth2 Authorization Code flow with ForgeRock as the provider
+- OAuth2 Authorization Code flow with Auth0 as the provider
+- Two login paths: direct Auth0 (`Username-Password-Authentication` connection) and Auth0 federated via Keycloak
+- `ConnectionAwareRequestResolver` injects the Auth0 `connection` parameter at authorization time without embedding it in `authorization-uri`
+- Federated logout: when signed in via the Keycloak connection, logout propagates upstream using Auth0's `federated` parameter
 - HTTPS enabled by default (self-signed keystore included)
 - Thymeleaf-based UI with JSON claims highlighting
 - Secure login and logout flows
@@ -16,16 +19,16 @@ This project demonstrates a Spring Boot application acting as an OAuth2 client f
 
 - Java 11 or higher
 - Maven 3.6+
-- A ForgeRock AM instance with an OAuth2 client registered
-- The client must allow the redirect URI used by this app (see below)
+- An Auth0 tenant with an application registered (Regular Web Application)
+- The application must allow the redirect URIs used by this app (see below)
 
 ## Getting Started
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/forgerock-oauth2-client.git
-cd forgerock-oauth2-client
+git clone https://github.com/your-org/test-harness-oauth2-client.git
+cd test-harness-oauth2-client
 ```
 
 ### 2. Configure Application
@@ -34,30 +37,37 @@ The following environment variables are required at startup:
 
 | Variable | Required | Description | Example |
 |---|---|---|---|
-| `OAUTH2_CLIENT_ID` | Yes | OAuth2 client ID registered with ForgeRock | `Testharness` |
+| `OAUTH2_CLIENT_ID` | Yes | OAuth2 client ID registered with Auth0 | `abc123` |
 | `OAUTH2_CLIENT_SECRET` | Yes | OAuth2 client secret | `<your-secret>` |
-| `OAUTH2_ISSUER_URI` | Yes | OIDC issuer URI for the ForgeRock realm | `https://<host>/am/oauth2/alpha` |
-| `APP_INTROSPECTION_URI` | No | Token introspection endpoint. When set, enables the introspection panel on the API calls page. Uses `client_secret_post` auth. | `https://<host>/am/oauth2/alpha/introspect` |
+| `OAUTH2_ISSUER_URI` | Yes | OIDC issuer URI for your Auth0 tenant | `https://<tenant>.auth0.com/` |
+| `APP_INTROSPECTION_URI` | No | Token introspection endpoint. When set, enables the introspection panel on the API calls page. Uses `client_secret_post` auth. | `https://<tenant>.auth0.com/oauth/introspect` |
+| `OAUTH2_CONNECTION_DIRECT` | No | Auth0 connection name for the direct login path. Defaults to `Username-Password-Authentication`. | `Username-Password-Authentication` |
+| `OAUTH2_CONNECTION_KEYCLOAK` | No | Auth0 connection name for the federated Keycloak login path. Defaults to `keycloak-alpha`. | `keycloak-alpha` |
 
 Set them in your shell before running:
 
 ```bash
-export OAUTH2_CLIENT_ID=Testharness
+export OAUTH2_CLIENT_ID=<your-client-id>
 export OAUTH2_CLIENT_SECRET=<your-secret>
-export OAUTH2_ISSUER_URI=https://<your-fr-host>/am/oauth2/alpha
+export OAUTH2_ISSUER_URI=https://<your-auth0-tenant>.auth0.com/
 ```
 
 Or pass them inline:
 
 ```bash
-OAUTH2_CLIENT_ID=Testharness \
+OAUTH2_CLIENT_ID=<your-client-id> \
 OAUTH2_CLIENT_SECRET=<your-secret> \
-OAUTH2_ISSUER_URI=https://<your-fr-host>/am/oauth2/alpha \
-APP_INTROSPECTION_URI=https://<your-fr-host>/am/oauth2/alpha/introspect \
+OAUTH2_ISSUER_URI=https://<your-auth0-tenant>.auth0.com/ \
+APP_INTROSPECTION_URI=https://<your-auth0-tenant>.auth0.com/oauth/introspect \
 mvn spring-boot:run
 ```
 
-The `redirect-uri` is set to `https://stevedev-local:8443/login/oauth2/code/forgerock` and must match one of the allowed redirect URIs in your ForgeRock client registration. To change it, update `application.yml`.
+The redirect URIs are:
+
+- `https://stevedev-local:8443/login/oauth2/code/auth0` (direct Auth0 login)
+- `https://stevedev-local:8443/login/oauth2/code/auth0-keycloak` (Keycloak federated login)
+
+Both must be registered as **Allowed Callback URLs** in your Auth0 application. To change them, update `application.yml`.
 
 The default HTTPS keystore is `keystore.p12` with password `password` (for development only).
 
@@ -73,9 +83,14 @@ The app will start on `https://stevedev-local:8443/`.
 
 Open [https://stevedev-local:8443/](https://stevedev-local:8443/) in your browser. You may need to trust the self-signed certificate.
 
-### 5. Login with ForgeRock
+### 5. Login with Auth0
 
-Click the login button to authenticate via ForgeRock. After login, your ID and access token claims will be displayed with syntax highlighting.
+The home page presents two login buttons:
+
+- **Login with Auth0** — authenticates directly via the `Username-Password-Authentication` connection (or the value of `OAUTH2_CONNECTION_DIRECT`).
+- **Login with Auth0 (Keycloak federated)** — routes through the `keycloak-alpha` connection (or the value of `OAUTH2_CONNECTION_KEYCLOAK`), delegating authentication upstream to Keycloak.
+
+After login, your ID and access token claims will be displayed with syntax highlighting.
 
 ### 6. Make API Calls
 
@@ -98,11 +113,13 @@ Click the logout button to end your session and be redirected as configured.
 
 ## Troubleshooting
 
-- **403 or redirect_uri_mismatch**: Ensure the `redirect-uri` in `application.yml` matches exactly with the value registered in ForgeRock.
-- **Blank login page**: Check browser console for cookie or CORS issues. Ensure your hostname is resolvable and trusted by ForgeRock.
+- **403 or redirect_uri_mismatch**: Ensure both redirect URIs (`/login/oauth2/code/auth0` and `/login/oauth2/code/auth0-keycloak`) are registered as Allowed Callback URLs in your Auth0 application.
+- **Blank login page**: Check browser console for cookie or CORS issues. Ensure your hostname is resolvable and trusted by Auth0.
 - **HTTPS issues**: Trust the self-signed certificate or use a valid certificate for your environment.
-- **401 on introspection**: Ensure the ForgeRock client is configured with `client_secret_post` as the token endpoint authentication method, which matches the `client-authentication-method` setting in `application.yml`.
+- **401 on introspection**: Ensure the Auth0 application is configured with `client_secret_post` as the token endpoint authentication method, which matches the `client-authentication-method` setting in `application.yml`.
 - **Introspection panel not shown**: Confirm `APP_INTROSPECTION_URI` is set in the environment before starting the app. The panel is hidden when the variable is absent or empty.
+- **Keycloak federated login not working**: Confirm the Auth0 connection name matches the value of `OAUTH2_CONNECTION_KEYCLOAK` and that `https://stevedev-local:8443/login/oauth2/code/auth0-keycloak` is an Allowed Callback URL.
+- **Federated logout not propagating**: Auth0's `federated` logout parameter is only sent when the user authenticated via the `auth0-keycloak` registration. Confirm the Keycloak connection in Auth0 has back-channel logout or OIDC RP-Initiated Logout configured.
 
 ## License
 
