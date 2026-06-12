@@ -54,7 +54,7 @@ public class SecurityConfig {
         http
                 // 2.7.x style:
                 .authorizeRequests(auth -> auth
-                        .antMatchers("/", "/css/**", "/js/**", "/images/**", "/webjars/**", "/Designer.png").permitAll()
+                        .antMatchers("/", "/css/**", "/js/**", "/images/**", "/webjars/**", "/Designer.png", "/Designer_purple.png").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2

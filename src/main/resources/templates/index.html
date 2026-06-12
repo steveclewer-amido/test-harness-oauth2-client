@@ -23,7 +23,7 @@
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h1 class="mb-4">OAuth2 Test Client App</h1>
-                    <img th:src="@{/Designer.png}" alt="Designer Logo" class="img-fluid mb-3" style="max-width:25%;height:auto;"/>
+                    <img th:src="@{/Designer_purple.png}" alt="Designer Logo" class="img-fluid mb-3" style="max-width:25%;height:auto;"/>
                     <p>Choose how you want to sign in:</p>
                     <div class="d-grid gap-2">
                         <a class="btn btn-primary" th:href="@{/oauth2/authorization/auth0}">
@@ -33,7 +33,7 @@
                             Login federated (Auth0 &#8594; Keycloak as IdP)
                         </a>
                         <a class="btn btn-outline-secondary" th:href="@{/oauth2/authorization/auth0-org}">
-                            Login with Organization (Auth0)
+                            Login with Organization (Auth0)<span th:if="${orgId != null and !orgId.isEmpty()}"> &mdash; <code th:text="${orgId}"></code></span>
                         </a>
                     </div>
                     <p class="text-muted mt-3">
